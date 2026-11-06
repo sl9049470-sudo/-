@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Пятнашки: код с пояснениями</title>
+<style>
+*,*::before,*::after{box-sizing:border-box}
+:root{--bg:#f6f2fb;--panel:#fff;--text:#241a3a;--muted:#6d5f8a;--accent:#6b3fb5;--gold:#b8860b;--code:#f1ebfa;--line:#d9cdee;--sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#150d24;--panel:#21143a;--text:#efe8fa;--muted:#b9a9d6;--accent:#a77bff;--gold:#e6c15a;--code:#1a102e;--line:#3a2862}}
+:root[data-theme="dark"]{--bg:#150d24;--panel:#21143a;--text:#efe8fa;--muted:#b9a9d6;--accent:#a77bff;--gold:#e6c15a;--code:#1a102e;--line:#3a2862}
+html{scroll-padding-top:var(--sat);-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,Arial,sans-serif}
+body::before{content:"";position:fixed;inset:0 0 auto;height:var(--sat);background:var(--bg);z-index:10}
+header{position:sticky;top:var(--sat);z-index:11;background:var(--bg);padding:14px 16px 10px;border-bottom:2px solid var(--gold)}
+.wrap{max-width:980px;width:100%;margin:0 auto}
+h1{margin:0 0 10px;font-size:22px;color:var(--gold)}
+nav{display:none}
+.sr{display:flex;gap:10px;align-items:center;margin-top:10px}
+#q{flex:1;min-width:0;padding:10px 12px;font-size:16px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--text)}
+#cnt{color:var(--muted);font-size:14px;white-space:nowrap}
+main{padding:16px 16px 140px}
+.intro{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;padding:12px 14px;margin:0 0 8px}
+.hint{color:var(--muted);font-size:14px;margin:0 0 12px}
+#code{background:var(--code);border:1px solid var(--line);border-radius:12px;padding:8px 0;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.blk{border-left:4px solid transparent;padding:4px 14px;cursor:pointer;font:14px/1.45 Consolas,Menlo,monospace;white-space:pre}
+.blk:hover{background:var(--panel);border-left-color:var(--accent)}
+.blk.act{background:var(--panel);border-left-color:var(--gold)}
+.blk.hit{border-left-color:var(--gold);background:var(--panel)}
+.blk.dim{opacity:.3}
+.ln{display:block;min-height:1.45em}
+#code i{font-style:normal;border-radius:3px}
+#code .w,#code .k,#code .o{cursor:pointer}
+#code .w:hover,#code .k:hover,#code .o:hover{background:rgba(167,123,255,.3)}
+.c{color:var(--muted)}.s{color:var(--accent)}.k{color:var(--accent);font-weight:700}
+#code .u{background:rgba(167,123,255,.4);outline:1px solid var(--accent)}
+#code .as{background:rgba(230,193,90,.6);outline:1px solid var(--gold)}
+.ln.fbd{background:rgba(167,123,255,.2)}
+.ln.act{background:rgba(230,193,90,.3)}
+.s-assign .o-assign{background:rgba(230,193,90,.6)}
+.s-eq .o-eq{background:rgba(60,200,180,.45)}
+.s-cmp .o-cmp{background:rgba(240,100,170,.4)}
+.s-logic .o-logic{background:rgba(255,150,60,.5)}
+.s-var .k-var,.s-var .k-let,.s-var .k-const{background:rgba(167,123,255,.45)}
+.s-fn .k-function{background:rgba(60,200,180,.45)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px;font-size:14px}
+.chip,.fb2{padding:6px 10px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--text);font:600 13px Consolas,Menlo,monospace;cursor:pointer}
+.chip.on{background:var(--gold);color:#1a102e;border-color:var(--gold)}
+.fb2{border-color:var(--accent)}
+h2{color:var(--gold);font-size:18px;margin:24px 0 10px}
+#terms{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.term{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.term b{color:var(--accent)}.term p{margin:4px 0 0;font-size:14px}
+#pop{position:fixed;left:0;right:0;bottom:0;z-index:12;transform:translateY(110%);transition:transform .2s;background:var(--panel);border-top:3px solid var(--gold);padding:14px 16px calc(14px + var(--sab));box-shadow:0 -6px 20px rgba(0,0,0,.25);max-height:45vh;overflow:auto}
+#pop.show{transform:none}
+#pop .in{max-width:980px;margin:0 auto;position:relative;padding-right:36px}
+#pop h3{margin:0 0 4px;color:var(--gold)}
+#pop p{margin:0;overflow-wrap:anywhere}
+#pop code{background:var(--code);padding:1px 5px;border-radius:4px;font-size:13px;overflow-wrap:anywhere}
+#x{position:absolute;right:0;top:0;border:0;background:none;color:var(--text);font-size:26px;cursor:pointer}
+.ex{display:none;white-space:normal;font:14px/1.4 system-ui,Arial,sans-serif;color:var(--muted);margin:2px 0 6px 18px;padding-left:10px;border-left:3px solid var(--gold)}
+.s-ex .ex{display:block}
+@media (max-width:720px){
+  header{padding:10px 10px 8px}
+  h1{font-size:18px;margin-bottom:8px}
+  main{padding:10px 10px 120px}
+  .intro{padding:10px 12px;font-size:14px}
+  .hint{font-size:13px;margin-bottom:10px}
+  #code{padding:6px 0;overflow-x:auto}
+  .blk{padding:3px 10px;font-size:13px;white-space:pre-wrap;overflow-wrap:anywhere}
+  .ln{min-height:1.5em}
+  .ex{margin:2px 0 6px 8px;padding-left:8px;font-size:13px}
+  #pop{padding:12px 12px calc(12px + var(--sab));max-height:60vh}
+  #pop .in{padding-right:32px}
+  #pop h3{font-size:16px}
+  #pop p{font-size:14px}
+  #terms{grid-template-columns:1fr}
+  .term{padding:9px 10px}
+  .term p{font-size:13px}
+  .chip,.fb2{font-size:12px;padding:6px 9px}
+  h2{font-size:16px;margin:18px 0 8px}
+}
+@media (max-width:400px){
+  h1{font-size:16px}
+  .blk{font-size:12px}
+  #q{font-size:15px;padding:9px 10px}
+  #cnt{font-size:12px}
+}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<h1>Пятнашки на JavaScript</h1>
+<nav id="nav"></nav>
+<div class="sr"><input id="q" type="search" placeholder="Найти по слову (Enter — следующее совпадение)"><span id="cnt"></span></div>
+</div></header>
+<main class="wrap">
+<p class="intro" id="intro"></p>
+<p class="hint">Построчные пояснения есть у JavaScript-части. HTML и CSS показаны просто как код. Кнопка «Пояснение под каждой строкой» включает и выключает пояснения, нажатие на строку кода показывает пояснение внизу, а нажатие на слово или знак (=, ===, переменную, функцию) подсвечивает все такие места.</p>
+<div class="chips"><b>Подсветить везде:</b>
+<button class="chip on" data-s="ex">Пояснение под каждой строкой</button>
+<button class="chip" data-s="assign">= присваивание</button>
+<button class="chip" data-s="eq">=== !== сравнение</button>
+<button class="chip" data-s="cmp">&lt; &gt; больше/меньше</button>
+<button class="chip" data-s="logic">|| &amp;&amp; или/и</button>
+<button class="chip" data-s="var">let / const переменные</button>
+<button class="chip" data-s="fn">function функции</button></div>
+<div class="chips" id="fns"></div>
+<div id="code"></div>
+<h2>Слова, которые встречаются</h2>
+<div id="terms"></div>
+</main>
+<div id="pop"><div class="in"><button id="x" aria-label="Закрыть">×</button><h3 id="pt"></h3><p id="pn"></p></div></div>
+<script>
+const TABS = {
+  puzzle: {
+    name: "Пятнашки",
+    intro: "Игра «Пятнашки» на JavaScript: поле 4×4 — это массив из 16 чисел, где 0 обозначает пустую клетку. Число можно сдвинуть, только если оно стоит рядом с пустой клеткой. При старте поле перемешивается сотнями случайных ходов — поэтому каждая партия новая. Победа — когда числа идут по порядку от 1 до 15, а последняя клетка пустая.",
+    vars: "startBoard|образец начальной расстановки: 16 чисел, 0 — пустая клетка;board|рабочая копия поля: по ней идёт вся игра;moves|сколько ходов уже сделано;gameOver|true, когда игра закончилась;field|элемент страницы с id=board, куда рисуются кнопки;button|очередная кнопка-клетка из цикла;empty|номер пустой клетки в массиве board;possibleMoves|массив номеров соседних клеток, куда можно сдвинуть число;randomIndex|случайный номер от 0 до длины possibleMoves минус 1;randomCell|случайно выбранная клетка, на которую пойдёт число;i|номер клетки: в цикле — счётчик, в move — номер нажатой клетки",
+    fns: "shuffleBoard|Перемешивает поле: 300 раз двигает случайное соседнее число в пустую клетку;drawBoard|Рисует поле: очищает контейнер board и создаёт 16 кнопок с числами;move|Ход: проверяет, можно ли сдвинуть число в клетку i, меняет его с пустой клеткой, считает ходы и проверяет победу;checkWin|Проверяет победу: в клетках 0…14 должны стоять числа 1…15, а в клетке 15 — ноль;newGame|Начинает игру: перемешивает поле, обнуляет ходы и рисует его",
+    terms: ["array","let","function","eq","logic","for","dom","html","ret","math","grid","idx","push","random"],
+    blocks: [
+      {
+        code: `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Пятнашки<\/title>`,
+        t: "Шапка страницы",
+        n: "Начало HTML-документа: тип страницы, служебная часть, кодировка и заголовок вкладки."
+      },
+      {
+        code: `    <style>
+        #board {
+            display: grid;
+            grid-template-columns: repeat(4, 70px);
+            gap: 5px;
+            background: #222;
+            padding: 7px;
+            width: max-content;
+        }`,
+        t: "Стили: сетка поля",
+        n: "CSS поля: сетка из 4 столбцов по 70 пикселей, зазоры и фон."
+      },
+      {
+        code: `        #board button {
+            width: 70px;
+            height: 70px;
+            font-size: 25px;
+            background: #17649b;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }`,
+        t: "Стили: кнопки-клетки",
+        n: "CSS клеток: квадраты 70×70 с крупной цифрой, синие, со скруглёнными углами."
+      },
+      {
+        code: `        #board button:hover {
+            background: #2785c4;
+        }
+        #board button:empty {
+            background: #222;
+            cursor: default;
+        }
+    <\/style>
+<\/head>`,
+        t: "Стили: наведение и пустая клетка",
+        n: "CSS: подсветка клетки при наведении и тёмная пустая клетка без цифры. Конец служебной части."
+      },
+      {
+        code: `<body>
+    <h1>Игра «Пятнашки»<\/h1>
+    <p id="message">Перемещай числа в пустую клетку<\/p>
+    <p id="moves">Ходов: 0<\/p>
+    <div id="board"><\/div>
+    <br>
+    <button onclick="newGame()">Новая игра<\/button>`,
+        t: "Заголовок и панель игры",
+        n: "Видимая часть: заголовок, сообщение, счётчик ходов, контейнер поля и кнопка «Новая игра»."
+      },
+      {
+        code: `    <script>`,
+        t: "Начало скрипта",
+        n: "Начало блока JavaScript — программы игры."
+      },
+      {
+        code: `        const startBoard = [
+            1, 14, 13, 12,
+            11, 0, 6, 3,
+            15, 2, 5, 7,
+            10, 8, 4, 9
+        ];
+
+        let board = startBoard.slice();
+        let moves = 0;
+        let gameOver = false;`,
+        t: "Данные игры",
+        n: "startBoard — образец поля (16 чисел, 0 — пустая клетка). board — рабочая копия. moves — счётчик ходов. gameOver — закончилась ли игра.",
+        l: [
+          "const startBoard = [ — создаём постоянную переменную startBoard и кладём в неё массив. Квадратные скобки [ ] — массив, числа разделяются запятыми. Это образец начальной расстановки.",
+          "Первая строка поля: числа 1, 14, 13, 12 — это клетки с номерами 0, 1, 2, 3.",
+          "Вторая строка поля: клетки 4, 5, 6, 7. Здесь стоит 0 — это пустая клетка.",
+          "Третья строка поля: клетки 8, 9, 10, 11.",
+          "Четвёртая строка поля: клетки 12, 13, 14, 15.",
+          "]; — конец массива. Точка с запятой завершает команду.",
+          "Пустая строка — просто отступ для удобства чтения.",
+          "let board = startBoard.slice(); — рабочая копия поля. slice() делает копию массива, чтобы двигать числа в board, но не испортить образец startBoard. let — потому что дальше board будет меняться.",
+          "let moves = 0; — счётчик ходов: сначала ноль. Значение будет меняться.",
+          "let gameOver = false; — false («нет»): игра идёт. Когда игрок победит, станет true («да») и ходы блокируются."
+        ]
+      },
+      {
+        code: `        function shuffleBoard() {
+            board = startBoard.slice();
+            for (let i = 0; i < 300; i++) {
+                const empty = board.indexOf(0);
+                const possibleMoves = [];
+                if (empty % 4 !== 0) {
+                    possibleMoves.push(empty - 1);
+                }
+                if (empty % 4 !== 3) {
+                    possibleMoves.push(empty + 1);
+                }
+                if (empty >= 4) {
+                    possibleMoves.push(empty - 4);
+                }
+                if (empty < 12) {
+                    possibleMoves.push(empty + 4);
+                }
+                const randomIndex = Math.floor(
+                    Math.random() * possibleMoves.length
+                );
+                const randomCell = possibleMoves[randomIndex];
+                board[empty] = board[randomCell];
+                board[randomCell] = 0;
+            }
+        }`,
+        t: "shuffleBoard()",
+        n: "Перемешивает поле: 300 раз сдвигает случайное соседнее число в пустую клетку. % — остаток от деления (номер столбца).",
+        l: [
+          "Объявляем функцию shuffleBoard без параметров. Команды внутри { } выполнятся, когда её вызовут.",
+          "board = startBoard.slice() — берём свежую копию образца поля. Перемешивать будем уже её, а startBoard остаётся нетронутым.",
+          "Цикл for повторится 300 раз. let i = 0 — старт; i < 300 — пока i меньше 300; i++ — после каждого круга i на 1 больше. Каждый круг — один случайный сдвиг.",
+          "board.indexOf(0) находит номер пустой клетки в массиве. Кладём его в переменную empty.",
+          "const possibleMoves = [] — пустой массив: сюда будем собирать номера клеток, на которые можно сдвинуть число (рядом с пустой клеткой).",
+          "if (empty % 4 !== 0) { — empty % 4 — остаток от деления на 4, то есть номер столбца (0, 1, 2 или 3). Если пустая клетка не в первом столбце (остаток не 0) — слева есть сосед.",
+          "possibleMoves.push(empty - 1) — добавляем номер соседа слева (empty - 1) в список возможных ходов.",
+          "} — конец блока «if (empty % 4 !== 0) {».",
+          "if (empty % 4 !== 3) { — если пустая клетка не в последнем (четвёртом) столбце — справа есть сосед.",
+          "possibleMoves.push(empty + 1) — добавляем номер соседа справа (empty + 1).",
+          "} — конец блока «if (empty % 4 !== 3) {».",
+          "if (empty >= 4) { — если номер пустой клетки не меньше 4, значит это не первая строка — сверху есть сосед.",
+          "possibleMoves.push(empty - 4) — добавляем номер соседа сверху (empty - 4).",
+          "} — конец блока «if (empty >= 4) {».",
+          "if (empty < 12) { — если номер меньше 12, значит это не последняя строка — снизу есть сосед.",
+          "possibleMoves.push(empty + 4) — добавляем номер соседа снизу (empty + 4).",
+          "} — конец блока «if (empty < 12) {». Теперь в possibleMoves все клетки, куда можно сдвинуть число.",
+          "Math.floor( — округление вниз до целого. Строка продолжается на следующей строке.",
+          "Math.random() * possibleMoves.length — случайное дробное число от 0 до длины массива (не включая её). Вместе с Math.floor получаем целый случайный индекс.",
+          "); — конец вызова Math.floor. В randomIndex теперь случайный номер от 0 до длины possibleMoves минус 1.",
+          "possibleMoves[randomIndex] — берём случайно выбранный номер клетки из списка и кладём в randomCell.",
+          "board[empty] = board[randomCell] — в пустую клетку кладём число из случайной соседней.",
+          "board[randomCell] = 0 — а эта клетка становится пустой. Число и пустота поменялись местами — один случайный сдвиг.",
+          "} — конец цикла for. За 300 повторов поле перемешается.",
+          "} — конец функции shuffleBoard."
+        ]
+      },
+      {
+        code: `        function drawBoard() {
+            const field = document.getElementById("board");
+            field.innerHTML = "";
+            for (let i = 0; i < 16; i++) {
+                const button = document.createElement("button");
+                if (board[i] !== 0) {
+                    button.innerHTML = board[i];
+                }
+                button.onclick = function() {
+                    move(i);
+                };
+                field.appendChild(button);
+            }
+        }`,
+        t: "drawBoard()",
+        n: "Рисует поле: очищает контейнер board и создаёт 16 кнопок. Если в клетке не 0 — пишет число, и каждой кнопке назначает ход move(i).",
+        l: [
+          "Объявляем функцию drawBoard без параметров. Команды внутри { } выполнятся, когда её вызовут.",
+          "document.getElementById(\"board\") находит на странице элемент id=\"board\" и кладёт его в переменную field. Дальше работаем с этим контейнером.",
+          "field.innerHTML = \"\" — очищаем контейнер: удаляем все старые кнопки. Поле будет нарисовано заново.",
+          "Цикл for повторяется 16 раз: let i = 0 — старт; i < 16 — пока i меньше 16; i++ — после каждого круга i на 1 больше. Так пройдём все клетки от 0 до 15.",
+          "document.createElement(\"button\") создаёт новую кнопку (пока её нет на странице) и кладёт её в переменную button.",
+          "Если в клетке i лежит не 0 (то есть там число, а не пусто) — выполнится блок в { }.",
+          "button.innerHTML = board[i] — записываем число в кнопку: цифра появится на экране. Если число 0, в кнопку ничего не пишем — клетка останется пустой.",
+          "} — конец блока «if (board[i] !== 0) {».",
+          "button.onclick = function() { — назначаем кнопке действие при нажатии: безымянную функцию.",
+          "move(i) — когда игрок нажмёт эту кнопку, вызовется move с номером именно этой клетки. У каждой кнопки своё значение i.",
+          "}; — конец функции-обработчика нажатия.",
+          "field.appendChild(button) — добавляем готовую кнопку в контейнер board: она появляется на странице.",
+          "} — конец цикла for.",
+          "} — конец функции drawBoard."
+        ]
+      },
+      {
+        code: `        function move(i) {
+            if (gameOver) {
+                return;
+            }
+            const empty = board.indexOf(0);`,
+        t: "move(i): защита и поиск пустой",
+        n: "i — номер нажатой клетки. Если игра закончена (gameOver), return — выходим. Иначе находим номер пустой клетки через indexOf(0).",
+        l: [
+          "Функция move — ход. Параметр i — номер клетки, по которой щёлкнули (его передала кнопка).",
+          "Если gameOver равно true (игра закончилась) — выполнится блок в { }.",
+          "return — сразу выйти из функции: после победы ходить нельзя, ничего не делаем.",
+          "} — конец блока «if (gameOver) {».",
+          "board.indexOf(0) ищет в массиве board число 0 и возвращает его номер (индекс). Кладём его в переменную empty."
+        ]
+      },
+      {
+        code: `            if (
+                Math.abs(i - empty) === 4 ||
+                (
+                    Math.floor(i / 4) === Math.floor(empty / 4) &&
+                    Math.abs(i - empty) === 1
+                )
+            ) {`,
+        t: "move(i): можно ли двигать",
+        n: "Двигать можно, если клетка в том же столбце и на строку выше/ниже (разница 4) или в той же строке рядом (разница 1). Math.abs — модуль, Math.floor(i/4) — номер строки.",
+        l: [
+          "if ( — начало условия «можно ли передвинуть число». Оно большое, поэтому разбито на строки, а части соединены || («ИЛИ»).",
+          "Math.abs(i - empty) === 4 — первая часть: разница номеров ровно 4. Math.abs — модуль (убирает минус). Клетки 0 и 4, 5 и 9 и т. п. стоят друг над другом в одном столбце.",
+          "( — начало второй части условия, взятой в скобки: «в той же строке и рядом».",
+          "Math.floor(i / 4) === Math.floor(empty / 4) — номер строки у обеих клеток одинаковый. Math.floor отбрасывает дробную часть: клетки 0–3 дают строку 0, 4–7 — строку 1 и так далее.",
+          "Math.abs(i - empty) === 1 — и разница номеров ровно 1, то есть клетки соседние по горизонтали.",
+          ") — конец второй части условия.",
+          ") { — конец всего условия. Если оно верно (|| — «ИЛИ», хватит одной части), выполнятся команды в { }."
+        ]
+      },
+      {
+        code: `                board[empty] = board[i];
+                board[i] = 0;
+                moves = moves + 1;
+                document.getElementById("moves").innerHTML =
+                    "Ходов: " + moves;
+                drawBoard();
+                if (checkWin()) {
+                    document.getElementById("message").innerHTML =
+                        "Поздравляем! Ты выиграл!";
+                    gameOver = true;
+                }
+            }
+        }`,
+        t: "move(i): обмен и победа",
+        n: "Меняем число и пустую клетку местами, увеличиваем счётчик, перерисовываем поле и проверяем победу.",
+        l: [
+          "board[empty] = board[i] — в пустую клетку кладём число из нажатой клетки.",
+          "board[i] = 0 — а нажатая клетка становится пустой. Число и пустота поменялись местами — ход сделан.",
+          "moves = moves + 1 — ходов стало на один больше: берём старое значение, прибавляем 1 и кладём обратно.",
+          "document.getElementById(\"moves\") — находим абзац со счётчиком. Строка продолжается на следующей строке.",
+          "\"Ходов: \" + moves — склеиваем текст «Ходов: » с числом и записываем в .innerHTML: на экране новый счётчик.",
+          "drawBoard() — вызываем функцию рисования: поле на экране обновляется, число переезжает в новую клетку.",
+          "if (checkWin()) { — вызываем checkWin. Если она вернула true (числа стоят по порядку) — выполним блок.",
+          "document.getElementById(\"message\") — находим абзац для сообщений. Строка продолжается на следующей строке.",
+          "\"Поздравляем! Ты выиграл!\" — записываем этот текст в .innerHTML: сообщение появится на странице.",
+          "gameOver = true — игра закончена: ходы больше не выполняются (см. проверку в начале move).",
+          "} — конец блока «if (checkWin()) {».",
+          "} — конец блока «if ( ... ) {», где проверялось, можно ли двигать число.",
+          "} — конец функции move."
+        ]
+      },
+      {
+        code: `        function checkWin() {
+            for (let i = 0; i < 15; i++) {
+                if (board[i] !== i + 1) {
+                    return false;
+                }
+            }
+            return board[15] === 0;
+        }`,
+        t: "checkWin()",
+        n: "Перебираем клетки 0–14: в клетке i должно лежать число i+1. Если хоть одно не совпало — false. И в последней клетке 15 должен быть 0.",
+        l: [
+          "Функция checkWin без параметров: возвращает true (победа) или false (ещё нет).",
+          "Цикл for от 0 до 14: проходим первые 15 клеток. let i = 0 — старт; i < 15 — пока i меньше 15; i++ — шаг на 1.",
+          "Если в клетке i лежит не число i + 1 (например, в клетке 0 должно быть 1, в клетке 5 — 6) — выполним блок.",
+          "return false — сразу вернуть «не победа» и выйти из функции: дальше проверять нет смысла.",
+          "} — конец блока «if (board[i] !== i + 1) {».",
+          "} — конец цикла for.",
+          "return board[15] === 0 — победа, если в последней клетке (номер 15) стоит 0, то есть она пустая. === сравнивает и вернёт true или false.",
+          "} — конец функции checkWin."
+        ]
+      },
+      {
+        code: `        function newGame() {
+            shuffleBoard();
+            moves = 0;
+            gameOver = false;
+            document.getElementById("moves").innerHTML =
+                "Ходов: 0";
+            document.getElementById("message").innerHTML =
+                "Перемещай числа в пустую клетку";
+            drawBoard();
+        }`,
+        t: "newGame()",
+        n: "Начинает игру: вызывает shuffleBoard(), обнуляет ходы и gameOver, сбрасывает надписи и рисует поле.",
+        l: [
+          "Функция newGame без параметров. Вызывается кнопкой «Новая игра» и один раз при запуске.",
+          "shuffleBoard() — перемешиваем поле случайными ходами: каждая партия новая. Копию образца shuffleBoard делает сама.",
+          "moves = 0 — счётчик ходов обнуляем.",
+          "gameOver = false — игра снова идёт, ходы разрешены.",
+          "document.getElementById(\"moves\") — находим абзац со счётчиком. Строка продолжается на следующей строке.",
+          "\"Ходов: 0\" — записываем в .innerHTML текст с нулём: счётчик на экране сброшен.",
+          "document.getElementById(\"message\") — находим абзац с сообщением. Строка продолжается на следующей строке.",
+          "\"Перемещай числа в пустую клетку\" — возвращаем на экран подсказку.",
+          "drawBoard() — рисуем поле заново: 16 кнопок с числами из перемешанного массива.",
+          "} — конец функции newGame."
+        ]
+      },
+      {
+        code: `        newGame();
+    <\/script>
+<\/body>
+<\/html>`,
+        t: "Старт",
+        n: "При открытии страницы сразу вызываем newGame(): поле перемешано, ходов 0.",
+        l: [
+          "Вызываем newGame() сразу при открытии страницы — игра готова к работе.",
+          "Конец блока JavaScript.",
+          "Конец видимой части страницы.",
+          "Конец HTML-документа."
+        ]
+      }
+    ]
+  }
+};
+
+const G = {
+  "array": ["Массив", "Список значений в квадратных скобках: [5, 2, 9]. Номера элементов идут с нуля: arr[0]. arr.length — сколько элементов."],
+  "let": ["let и const", "let создаёт переменную, значение которой можно менять. const создаёт постоянную: переприсвоить её нельзя. Здесь board, moves и gameOver — let, а startBoard — const."],
+  "function": ["function", "Функция — набор команд с именем. Выполняется, когда её вызывают, например нажатием кнопки."],
+  "eq": ["= и === и !==", "= записывает значение в переменную. === строго сравнивает (значение и тип должны совпасть), !== — строго «не равно»."],
+  "logic": ["|| и &&", "|| — «ИЛИ» (хватит одного условия), && — «И» (нужны все условия)."],
+  "for": ["Цикл for", "for (let i = 0; i < 16; i++) — повторить код 16 раз: старт, условие продолжения, шаг."],
+  "dom": ["getElementById", "document.getElementById(«имя») находит элемент страницы по id. .innerHTML — его содержимое, .onclick — действие при нажатии."],
+  "html": ["innerHTML", "Содержимое элемента: если записать туда текст или число, оно появится на странице."],
+  "ret": ["return", "Заканчивает функцию и возвращает ответ: true, false или число."],
+  "math": ["Math.abs, Math.floor, Math.random", "Math.abs(x) — модуль числа. Math.floor(x) — округление вниз до целого. Math.random() — случайное дробное число от 0 до 1 (не включая 1)."],
+  "grid": ["display: grid", "CSS-сетка: repeat(4, 70px) — 4 столбца по 70 пикселей, gap — зазор между клетками."],
+  "idx": ["indexOf и %", "board.indexOf(0) — найти в массиве число 0 и вернуть его номер. empty % 4 — остаток от деления на 4, то есть номер столбца (0–3)."],
+  "push": ["push", "possibleMoves.push(x) — добавить x в конец массива."],
+  "random": ["Math.random()", "Возвращает случайное дробное число от 0 до 1 (не включая 1). Вместе с Math.floor(Math.random() * n) даёт целое от 0 до n−1."]
+};
+
+const B = {
+  "var": "var создаёт переменную — коробку с именем.",
+  "let": "let создаёт переменную, значение которой можно менять: let moves = 0;",
+  "const": "const создаёт постоянную переменную: её значение нельзя переприсвоить. Например, const startBoard = [...] — образец поля.",
+  "function": "function создаёт функцию — набор команд с именем. Она выполняется только когда её вызывают.",
+  "return": "return завершает функцию и может вернуть ответ тому, кто её вызвал.",
+  "for": "for — цикл, повторяет код. В скобках три части: старт; условие продолжения; шаг (например, i++).",
+  "if": "if — «если»: условие в скобках; команды в { } выполнятся, только если оно верно (true).",
+  "else": "else — «иначе»: выполняется, если условие у if не сработало.",
+  "document": "document — вся страница целиком.",
+  "getElementById": "getElementById(«имя») — найти на странице элемент по его id.",
+  "createElement": "document.createElement(«button») — создать новый элемент (кнопку), пока не добавленный на страницу.",
+  "appendChild": ".appendChild(x) — добавить элемент x внутрь другого элемента.",
+  "onclick": ".onclick — действие при нажатии на элемент.",
+  "innerHTML": ".innerHTML — содержимое элемента. Если присвоить ему текст, он появится на странице.",
+  "indexOf": ".indexOf(0) — найти элемент в массиве и вернуть его номер (индекс).",
+  "Math": "Math — набор математических команд (abs, floor, random и другие).",
+  "abs": "Math.abs(x) — модуль числа: убирает минус.",
+  "floor": "Math.floor(x) — округление вниз до целого числа.",
+  "random": "Math.random() — случайное дробное число от 0 до 1 (не включая 1).",
+  "push": ".push(x) — добавить x в конец массива.",
+  "length": ".length — сколько элементов в массиве (или символов в тексте).",
+  "slice": ".slice() — сделать копию массива.",
+  "empty": "empty — переменная с номером пустой клетки.",
+  "board": "board — массив из 16 чисел: игровое поле.",
+  "moves": "moves — счётчик ходов.",
+  "gameOver": "gameOver — true, когда игра закончилась.",
+  "startBoard": "startBoard — образец начальной расстановки чисел.",
+  "possibleMoves": "possibleMoves — массив номеров клеток, куда можно сдвинуть число.",
+  "randomIndex": "randomIndex — случайный номер в массиве possibleMoves.",
+  "randomCell": "randomCell — случайно выбранная клетка, куда пойдёт число."
+};
+
+const OP = {
+  '=': 'Присваивание: значение справа кладётся в то, что стоит слева. Это НЕ «равно» из математики.',
+  '++': 'Увеличение на 1: i++ то же самое, что i = i + 1.',
+  '===': 'Строгое сравнение: равны ли и значение, и тип. Результат — true или false. Три знака нужны, чтобы JavaScript не подгонял типы сам.',
+  '!==': 'Строгое «не равно»: true, если значение или тип различаются.',
+  '<': 'Меньше? Результат true или false.',
+  '>': 'Больше? Результат true или false.',
+  '<=': 'Меньше или равно?',
+  '>=': 'Больше или равно?',
+  '||': 'ИЛИ: условие верно, если верно хотя бы одно из двух.',
+  '&&': 'И: условие верно, только если верны оба.'
+};
+
+const $ = s => document.querySelector(s);
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+const kv = s => Object.fromEntries(s.split(';').map(x => x.split('|')));
+const KW = { var: 1, let: 1, const: 1, function: 1, return: 1, for: 1, if: 1, else: 1 };
+const opc = t => ({ '=': 'assign', '++': 'assign', '===': 'eq', '!==': 'eq', '||': 'logic', '&&': 'logic' }[t] || 'cmp');
+const uniq = a => [...new Set(a)];
+let cur = 'puzzle', q = '', hits = [], hi = -1, V = {}, F = {};
+
+$('#nav').innerHTML = Object.keys(TABS).map(k => '<a class="tab" data-t="' + k + '" href="#' + k + '">' + TABS[k].name + '<span class="badge" id="b-' + k + '"></span></a>').join('');
+const ok = t => !q || t.toLowerCase().includes(q);
+const blockText = b => b.code + ' ' + b.t + ' ' + b.n + ' ' + (b.l || []).join(' ');
+const tx = l => l.querySelector('.tx').textContent;
+
+function hlJS(line) {
+  const re = /(\/\/[^\n]*)|("[^"\n]*"|'[^'\n]*')|(===|!==|<=|>=|\|\||&&|\+\+|=|<|>)|([A-Za-z_]\w*)/g;
+  let out = '', last = 0, m;
+  while ((m = re.exec(line))) {
+    out += esc(line.slice(last, m.index)); last = re.lastIndex;
+    const t = m[0];
+    if (m[1]) out += '<i class="c">' + esc(t) + '</i>';
+    else if (m[2]) out += '<i class="s">' + esc(t) + '</i>';
+    else if (m[3]) out += '<i class="o o-' + opc(t) + '" data-o="' + esc(t) + '">' + esc(t) + '</i>';
+    else if (KW[t]) out += '<i class="k k-' + t + '" data-n="' + t + '">' + t + '</i>';
+    else {
+      const as = /^(\[[^\]]*\])?\s*(=(?!=)|\+\+)/.test(line.slice(last)) ? ' data-as="1"' : '';
+      out += '<i class="w" data-n="' + t + '"' + as + '>' + t + '</i>';
+    }
+  }
+  return out + esc(line.slice(last));
+}
+function clr() { document.querySelectorAll('.u,.as,.fbd,.act').forEach(e => e.classList.remove('u', 'as', 'fbd', 'act')) }
+function closePop() { $('#pop').classList.remove('show'); clr() }
+function say(h, p) { $('#pt').textContent = h; $('#pn').innerHTML = p; $('#pop').classList.add('show') }
+const bt = e => TABS[cur].blocks[+e.closest('.blk').dataset.b].t;
+function openPop(i) {
+  clr(); const b = TABS[cur].blocks[i];
+  say(b.t, esc(b.n));
+  $('#code').children[i].classList.add('act');
+}
+function lineNote(ln) {
+  clr(); ln.classList.add('act');
+  const b = TABS[cur].blocks[+ln.closest('.blk').dataset.b], k = +ln.dataset.k;
+  if (!b.l || !b.l.length) {
+    say(b.t, 'У этой части кода построчных пояснений нет — она показана просто как код.<br><i>Блок «' + esc(b.t) + '»: ' + esc(b.n) + '</i>');
+    return;
+  }
+  say(tx(ln).trim() || '(пустая строка)', esc(b.l[k] || 'Пустая строка — просто отступ для удобства чтения.') + '<br><i>Весь блок «' + esc(b.t) + '»: ' + esc(b.n) + '</i>');
+}
+function selFn(n) {
+  clr();
+  const L = [...document.querySelectorAll('.ln')];
+  const s = L.findIndex(l => tx(l).includes('function ' + n + '('));
+  let d = 0, e = s, go = false;
+  for (let k = s; k < L.length; k++) {
+    for (const ch of tx(L[k])) { if (ch === '{') { d++; go = true } else if (ch === '}') d-- }
+    e = k; if (go && d === 0) break;
+  }
+  for (let k = s; k <= e; k++) L[k].classList.add('fbd');
+  const calls = [...document.querySelectorAll('.w[data-n="' + n + '"]')];
+  calls.forEach(x => x.classList.add(x.closest('.ln') === L[s] ? 'as' : 'u'));
+  let h = 0;
+  L.forEach((l, k) => { if ((k < s || k > e) && !l.querySelector('i') && tx(l).includes(n + '(')) { l.classList.add('u'); h++ } });
+  const pr = tx(L[s]).match(/\(([^)]*)\)/)[1] || 'без параметров';
+  say('Функция ' + n + '(' + (pr === 'без параметров' ? '' : pr) + ')',
+    '<b>За что отвечает:</b> ' + esc(F[n]) + '<br><b>Где написана:</b> блок «' + esc(bt(L[s])) + '» — подсвечена вся функция (' + (e - s + 1) + ' строк), её имя — золотым.<br><b>Где вызывается:</b> в HTML (кнопки) — ' + h + ' раз, в самом коде — ' + (calls.length - 1) + ' раз (фиолетовым).<br><b>Параметры:</b> ' + esc(pr) + '.');
+}
+function selVar(n) {
+  clr();
+  const S = [...document.querySelectorAll('.w[data-n="' + n + '"]')];
+  S.forEach(x => x.classList.add(x.dataset.as ? 'as' : 'u'));
+  const A = S.filter(x => x.dataset.as), U = S.filter(x => !x.dataset.as);
+  say('Переменная ' + n,
+    '<b>За что отвечает:</b> ' + esc(V[n]) + '<br><b>Золотым</b> — где ей присваивают значение (' + A.length + '): ' + (uniq(A.map(bt)).map(esc).join('; ') || 'нигде') + '.<br><b>Фиолетовым</b> — где её значение читают (' + U.length + '): ' + (uniq(U.map(bt)).map(esc).join('; ') || 'нигде') + '.');
+}
+function selWord(n) {
+  clr();
+  const S = [...document.querySelectorAll('i[data-n="' + n + '"]')];
+  S.forEach(x => x.classList.add('u'));
+  say(n, esc(B[n] || 'Имя из этого кода.') + '<br>Встречается в коде: ' + S.length + ' раз (подсвечено).');
+}
+function selOp(el) {
+  clr(); const o = el.dataset.o;
+  const S = [...document.querySelectorAll('.o')].filter(x => x.dataset.o === o);
+  S.forEach(x => x.classList.add('u'));
+  const ln = el.closest('.tx'), t = ln.textContent;
+  let off = 0;
+  for (const c of ln.childNodes) { if (c === el) break; off += c.textContent.length }
+  let ctx = '<br><b>Здесь:</b> <code>' + esc(t.trim()) + '</code>';
+  if (o === '=') {
+    const l = t.slice(0, off).split(/[;(]/).pop().trim(), r = t.slice(off + 1).split('//')[0].split(';')[0].trim();
+    ctx += '<br>Слева — <code>' + esc(l) + '</code> (куда кладём), справа — <code>' + esc(r) + '</code> (что кладём).';
+  }
+  say('Знак «' + o + '»', esc(OP[o]) + ctx + '<br>Таких знаков в этой программе: ' + S.length + ' (подсвечены).');
+}
+function search() {
+  q = $('#q').value.trim().toLowerCase(); hits = []; hi = -1;
+  TABS[cur].blocks.forEach((b, i) => {
+    const m = ok(blockText(b)), el = $('#code').children[i];
+    el.classList.toggle('hit', !!q && m); el.classList.toggle('dim', !!q && !m);
+    if (q && m) hits.push(i);
+  });
+  document.querySelectorAll('.term').forEach(e => { const g = G[e.dataset.k]; e.style.display = ok(g[0] + ' ' + g[1]) ? '' : 'none' });
+  for (const k in TABS) { $('#b-' + k).textContent = q ? TABS[k].blocks.filter(b => ok(blockText(b))).length : '' }
+  $('#cnt').textContent = q ? 'Найдено: ' + hits.length : '';
+}
+function render() {
+  const T = TABS[cur]; V = kv(T.vars); F = kv(T.fns);
+  const si = T.blocks.findIndex(b => b.t === 'Начало скрипта');
+  $('#intro').textContent = T.intro;
+  $('#code').innerHTML = T.blocks.map((b, i) => '<div class="blk" data-b="' + i + '">' + b.code.split('\n').map((l, k) => '<span class="ln" data-k="' + k + '"><span class="tx">' + (i >= si && !/^\s*<\/?(script|body|html)/.test(l) ? hlJS(l) : esc(l)) + '</span>' + (b.l && b.l[k] ? '<span class="ex">' + esc(b.l[k]) + '</span>' : '') + '</span>').join('') + '</div>').join('');
+  $('#fns').innerHTML = '<b>Функции программы:</b> ' + Object.keys(F).map(n => '<button class="fb2" data-f="' + n + '">' + n + '()</button>').join('');
+  $('#terms').innerHTML = T.terms.map(k => '<div class="term" data-k="' + k + '"><b>' + G[k][0] + '</b><p>' + G[k][1] + '</p></div>').join('');
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.t === cur));
+  closePop(); search();
+}
+$('#code').onclick = e => {
+  const w = e.target.closest('i[data-n],i[data-o]');
+  if (w) {
+    if (w.dataset.o) selOp(w);
+    else { const n = w.dataset.n; if (F[n]) selFn(n); else if (V[n]) selVar(n); else selWord(n) }
+    return;
+  }
+  const ln = e.target.closest('.ln');
+  if (ln) lineNote(ln);
+};
+$('#fns').onclick = e => {
+  const b = e.target.closest('[data-f]');
+  if (b) { selFn(b.dataset.f); const f = document.querySelector('.fbd'); if (f) f.scrollIntoView({ block: 'center', behavior: 'smooth' }) }
+};
+document.querySelectorAll('.chip').forEach(c => c.onclick = () => { c.classList.toggle('on'); document.body.classList.toggle('s-' + c.dataset.s) });
+$('#x').onclick = closePop;
+$('#q').oninput = search;
+$('#q').onkeydown = e => {
+  if (e.key === 'Enter' && hits.length) { hi = (hi + 1) % hits.length; openPop(hits[hi]); $('#code').children[hits[hi]].scrollIntoView({ block: 'center', behavior: 'smooth' }) }
+};
+document.onkeydown = e => { if (e.key === 'Escape') closePop() };
+function route() { const h = location.hash.slice(1); cur = TABS[h] ? h : 'puzzle'; render() }
+addEventListener('hashchange', route);
+document.body.classList.add('s-ex');
+route();
+</script>
+</body>
+</html>
